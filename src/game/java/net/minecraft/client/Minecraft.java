@@ -98,6 +98,7 @@ import net.minecraft.client.gui.GuiGameOver;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.GuiIngameMenu;
 import net.minecraft.client.gui.GuiMainMenu;
+import net.minecraft.client.gui.GuiModMenu;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiSleepMP;
 import net.minecraft.client.gui.ScaledResolution;
@@ -1412,23 +1413,6 @@ public class Minecraft implements IThreadListener {
 				}
 				KeyBinding.setKeyBindState(k, Keyboard.getEventKeyState());
 				if (Keyboard.getEventKeyState()) {
-					KeyBinding.onTick(k);
-				}
-
-				if (this.debugCrashKeyPressTime > 0L) {
-					if (getSystemTime() - this.debugCrashKeyPressTime >= 6000L) {
-						throw new ReportedException(new CrashReport("Manually triggered debug crash", new Throwable()));
-					}
-
-					if (!Keyboard.isKeyDown(46) || !Keyboard.isKeyDown(61)) {
-						this.debugCrashKeyPressTime = -1L;
-					}
-				} else if (Keyboard.isKeyDown(46) && Keyboard.isKeyDown(61)) {
-					this.debugCrashKeyPressTime = getSystemTime();
-				}
-
-				this.dispatchKeypresses();
-				if (Keyboard.getEventKeyState()) {
 					if (EaglerDeferredPipeline.instance != null) {
 						if (k == 62) {
 							DebugFramebufferView.toggleDebugView();
@@ -1452,6 +1436,10 @@ public class Minecraft implements IThreadListener {
 
 						if (k == 31 && Keyboard.isKeyDown(61)) {
 							this.refreshResources();
+						}
+
+						if ((k == 63 || k == 319) && this.currentScreen == null) {
+							this.displayGuiScreen(new GuiModMenu());
 						}
 
 						if (k == 19 && Keyboard.isKeyDown(61)) { // F3+R
@@ -1487,7 +1475,7 @@ public class Minecraft implements IThreadListener {
 
 						if (k == 33 && Keyboard.isKeyDown(61)) {
 							this.gameSettings.setOptionValue(GameSettings.Options.RENDER_DISTANCE,
-									GuiScreen.isShiftKeyDown() ? -1 : 1);
+								GuiScreen.isShiftKeyDown() ? -1 : 1);
 						}
 
 						if (k == 30 && Keyboard.isKeyDown(61)) {
@@ -1528,19 +1516,8 @@ public class Minecraft implements IThreadListener {
 						}
 					}
 				}
-			}
-
-			for (int l = 0; l < 9; ++l) {
-				if (this.gameSettings.keyBindsHotbar[l].isPressed()) {
-					if (this.thePlayer.isSpectator()) {
-						this.ingameGUI.getSpectatorGui().func_175260_a(l);
-					} else {
-						this.thePlayer.inventory.currentItem = l;
-					}
-				}
-			}
-
-			boolean zoomKey = this.gameSettings.keyBindZoomCamera.isKeyDown();
+		}
+		boolean zoomKey = this.gameSettings.keyBindZoomCamera.isKeyDown();
 			if (zoomKey != isZoomKey) {
 				adjustedZoomValue = startZoomValue;
 				isZoomKey = zoomKey;
